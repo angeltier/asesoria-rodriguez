@@ -764,8 +764,8 @@ async function doLogin() {
   const url     = document.getElementById('loginUrl').value.trim().replace(/\/$/, '');
   const usuario = document.getElementById('loginUsuario').value.trim();
   const pass    = document.getElementById('loginPass').value;
-  if (!url || !usuario || !pass) { mostrarLoginError('Completa todos los campos'); return; }
-   try {
+if (!url || !usuario || !pass) { mostrarLoginError('Completa todos los campos'); return; }
+  try {
     SERVIDOR = url; PASSWORD = pass; USUARIO = usuario;
     await api('/clientes');
     localStorage.setItem('cl_servidor', url);
