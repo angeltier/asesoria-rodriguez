@@ -7,7 +7,6 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg:#F0F4F8;--surface:#FFFFFF;--surface2:#EFF4FB;--surface3:#E8EEF8;
@@ -247,6 +246,61 @@ td.mono{font-family:var(--mono);font-size:11px}
   .stats-grid{grid-template-columns:1fr 1fr}
   .info-grid{grid-template-columns:1fr 1fr}
 }
+
+/* ── DOCUMENTOS ──────────────────────────────────── */
+.docs-section{margin-top:16px}
+.docs-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.docs-title{font-family:var(--display);font-size:14px;font-weight:700;color:#0F1E3D}
+.docs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:12px}
+.doc-card{background:#FFFFFF;border:1.5px solid #DCE8F8;border-radius:12px;
+  padding:12px;cursor:pointer;transition:all .15s;position:relative;
+  display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+.doc-card:hover{border-color:#1D4ED8;box-shadow:0 4px 12px rgba(29,78,216,0.12);transform:translateY(-1px)}
+.doc-icon{font-size:32px;line-height:1}
+.doc-nombre{font-size:11px;font-weight:600;color:#0F1E3D;word-break:break-word;max-width:100%}
+.doc-tipo-badge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;
+  background:#EFF4FB;color:#1D4ED8;border:1px solid #DCE8F8;text-transform:uppercase}
+.doc-fecha{font-size:9px;color:#94A3B8;font-family:var(--mono)}
+.doc-size{font-size:9px;color:#94A3B8}
+.doc-del-btn{position:absolute;top:6px;right:6px;background:none;border:none;
+  color:#CBD5E8;cursor:pointer;font-size:13px;padding:2px;border-radius:4px;transition:color .1s}
+.doc-del-btn:hover{color:#DC2626}
+.doc-upload-zone{border:2px dashed #CBD5E8;border-radius:12px;padding:20px;
+  text-align:center;cursor:pointer;transition:all .15s;background:#FAFCFF}
+.doc-upload-zone:hover{border-color:#1D4ED8;background:#EFF4FB}
+.doc-upload-zone.dragging{border-color:#1D4ED8;background:#EFF4FB;transform:scale(1.01)}
+.doc-upload-icon{font-size:28px;margin-bottom:6px}
+.doc-upload-text{font-size:12px;color:#64748B;font-weight:500}
+.doc-upload-sub{font-size:10px;color:#94A3B8;margin-top:2px}
+.doc-progress{height:3px;background:#EFF4FB;border-radius:3px;margin-top:6px;overflow:hidden}
+.doc-progress-bar{height:100%;background:linear-gradient(90deg,#1D4ED8,#16A34A);border-radius:3px;
+  transition:width .3s ease;width:0%}
+
+/* ── DOCUMENTOS ─────────────────────────────────────────── */
+.doc-upload-area{border:2px dashed #CBD5E8;border-radius:12px;padding:24px;
+  text-align:center;cursor:pointer;transition:all .2s;background:#F8FAFC;margin-bottom:14px}
+.doc-upload-area:hover,.doc-upload-area.drag-over{border-color:#1D4ED8;background:#EFF4FB}
+.doc-upload-icon{font-size:32px;margin-bottom:8px;opacity:.5}
+.doc-upload-text{font-size:13px;color:#64748B;font-weight:500}
+.doc-upload-sub{font-size:11px;color:#94A3B8;margin-top:4px}
+.doc-list{display:flex;flex-direction:column;gap:8px}
+.doc-item{display:flex;align-items:center;gap:10px;padding:10px 14px;
+  background:#FFFFFF;border:1.5px solid #DCE8F8;border-radius:10px;transition:all .15s}
+.doc-item:hover{border-color:#1D4ED8;box-shadow:0 2px 8px rgba(29,78,216,0.08)}
+.doc-icon{font-size:22px;flex-shrink:0;width:36px;text-align:center}
+.doc-info{flex:1;min-width:0}
+.doc-name{font-size:13px;font-weight:600;color:#0F1E3D;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.doc-meta{font-size:10px;color:#94A3B8;margin-top:2px}
+.doc-categoria{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;
+  background:#EFF4FB;color:#1D4ED8;border:1px solid #DCE8F8;white-space:nowrap}
+.doc-actions{display:flex;gap:5px;flex-shrink:0}
+.upload-progress{display:none;background:#EFF4FB;border:1px solid #DCE8F8;
+  border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:12px;color:#1D4ED8}
+.upload-progress.show{display:flex;align-items:center;gap:8px}
+.progress-bar-wrap{flex:1;height:6px;background:#DCE8F8;border-radius:3px;overflow:hidden}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,#1D4ED8,#16A34A);
+  border-radius:3px;transition:width .3s;width:0%}
 
 .logo-icon img{width:100%;height:100%;object-fit:cover;border-radius:8px}
 </style>
@@ -678,6 +732,64 @@ td.mono{font-family:var(--mono);font-size:11px}
       </div>
     </div>
   </div>
+
+<!-- MODAL SUBIR DOCUMENTO -->
+<div class="modal-overlay" id="modalDocumento">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-head">
+      <span class="modal-title">📎 Subir Documento</span>
+      <button class="modal-close" onclick="cerrarModal('modalDocumento')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="upload-progress" id="uploadProgress">
+        <span>⏳</span>
+        <div style="flex:1">
+          <div style="font-weight:600;margin-bottom:4px">Subiendo archivo...</div>
+          <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressFill"></div></div>
+        </div>
+      </div>
+
+      <div class="doc-upload-area" id="docUploadArea" onclick="document.getElementById('docFileInput').click()"
+        ondragover="event.preventDefault();this.classList.add('drag-over')"
+        ondragleave="this.classList.remove('drag-over')"
+        ondrop="handleDocDrop(event)">
+        <div class="doc-upload-icon">📂</div>
+        <div class="doc-upload-text" id="docUploadText">Clic o arrastra el archivo aquí</div>
+        <div class="doc-upload-sub">PDF, JPG, PNG, DOCX, XLSX — máximo 10 MB</div>
+      </div>
+      <input type="file" id="docFileInput" style="display:none"
+        accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx"
+        onchange="previewDocFile(this)">
+
+      <div class="form-grid">
+        <div class="field">
+          <label>Categoría *</label>
+          <select id="doc_categoria">
+            <option value="identificacion">🪪 Identificación (INE, Pasaporte)</option>
+            <option value="acta">📄 Acta de Nacimiento</option>
+            <option value="curp">📋 CURP</option>
+            <option value="visa">🇺🇸 Visa / Permiso</option>
+            <option value="formulario">📝 Formulario / Solicitud</option>
+            <option value="comprobante">🏠 Comprobante de Domicilio</option>
+            <option value="fotografia">📷 Fotografía</option>
+            <option value="pago">💳 Comprobante de Pago</option>
+            <option value="otro">📁 Otro</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Descripción (opcional)</label>
+          <input type="text" id="doc_descripcion" placeholder="Ej: INE vigente, pasaporte 2025...">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-ghost" onclick="cerrarModal('modalDocumento')">Cancelar</button>
+        <button class="btn btn-primary" id="btnSubirDoc" onclick="confirmarSubirDoc()" disabled>
+          📤 Subir Documento
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 </div>
 
 <!-- MODAL CAMBIAR CONTRASEÑA -->
@@ -715,6 +827,8 @@ td.mono{font-family:var(--mono);font-size:11px}
    Estado global y configuración
 ══════════════════════════════════════════════ */
 let SERVIDOR     = localStorage.getItem('cl_servidor') || '';
+let docArchivoSeleccionado = null;
+let docClienteId = null;
 let PASSWORD     = localStorage.getItem('cl_password') || '';
 let USUARIO      = localStorage.getItem('cl_usuario')  || '';
 let ROL_ACTUAL   = '';
@@ -1037,6 +1151,8 @@ async function verCliente(id) {
     clienteSeleccionado = c;
     vistaActual = 'detalle';
     renderDetalle(c);
+    // Cargar documentos del cliente
+    setTimeout(() => cargarYMostrarDocs(id), 100);
   } catch(e) { mostrarMsg('Error', e.message); }
 }
 
@@ -1091,7 +1207,17 @@ function renderDetalle(c) {
        <div class="empty-title">Sin trámites registrados</div>
        <button class="btn btn-primary" onclick="abrirNuevoTramite('${c.id}')">+ Crear primer trámite</button></div>`
     : tramitesCliente.map(t => renderTramiteCard(t)).join('')
-  }`;
+  }
+  <!-- Documentos -->
+  <div style="display:flex;align-items:center;gap:10px;margin:20px 0 12px;padding-top:12px;border-top:2px solid #DCE8F8">
+    <div style="font-family:var(--display);font-size:14px;font-weight:700;color:#0F1E3D">
+      📎 Documentos
+      <span style="font-size:12px;font-weight:400;color:#64748B;margin-left:6px" id="docsCount_${c.id}">(${(c.documentos||[]).length})</span>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="abrirSubirDocumento('${c.id}')">📤 Subir Documento</button>
+  </div>
+  <div id="docsSection_${c.id}">${renderDocumentos(c.documentos||[], c.id)}</div>
+  `;
 }
 
 function renderTramiteCard(t) {
@@ -1448,6 +1574,175 @@ function infoCard(label, val, cls='') {
     <div class="info-card-val ${cls}">${val}</div></div>`;
 }
 
+
+/* ═══════════════════════════════════════════
+   DOCUMENTOS
+═══════════════════════════════════════════ */
+const TIPOS_DOC = {
+  pasaporte:   { icon: '🛂', label: 'Pasaporte' },
+  visa:        { icon: '🇺🇸', label: 'Visa' },
+  ine:         { icon: '🪪', label: 'INE / ID' },
+  acta:        { icon: '📜', label: 'Acta' },
+  curp:        { icon: '📋', label: 'CURP' },
+  comprobante: { icon: '🏠', label: 'Comprobante' },
+  foto:        { icon: '📷', label: 'Fotografía' },
+  formulario:  { icon: '📝', label: 'Formulario' },
+  otro:        { icon: '📄', label: 'Otro' },
+};
+
+function fmtBytes(n) {
+  if (!n) return '';
+  if (n < 1024) return n + ' B';
+  if (n < 1048576) return (n/1024).toFixed(1) + ' KB';
+  return (n/1048576).toFixed(1) + ' MB';
+}
+
+function getDocIcon(mime, tipo) {
+  if (TIPOS_DOC[tipo]) return TIPOS_DOC[tipo].icon;
+  if (mime?.includes('pdf')) return '📑';
+  if (mime?.includes('image')) return '🖼️';
+  return '📄';
+}
+
+function renderDocsSection(clienteId, docs) {
+  return `
+  <div class="docs-section">
+    <div class="docs-header">
+      <div class="docs-title">📁 Documentos (${docs.length})</div>
+      <button class="btn btn-primary btn-sm" onclick="abrirSubirDoc('${clienteId}')">+ Subir</button>
+    </div>
+    ${docs.length === 0
+      ? `<div class="doc-upload-zone" onclick="abrirSubirDoc('${clienteId}')"
+           ondragover="event.preventDefault();this.classList.add('dragging')"
+           ondragleave="this.classList.remove('dragging')"
+           ondrop="event.preventDefault();this.classList.remove('dragging');manejarDropDocs(event,'${clienteId}')">
+           <div class="doc-upload-icon">📂</div>
+           <div class="doc-upload-text">Arrastra documentos aquí o haz clic para subir</div>
+           <div class="doc-upload-sub">PDF, imágenes, Word — máx. 5 MB por archivo</div>
+         </div>`
+      : `<div class="docs-grid">
+           ${docs.map(d => `
+             <div class="doc-card" onclick="descargarDocumento('${clienteId}','${d.id}','${d.nombre}','${d.mime}')">
+               <button class="doc-del-btn" onclick="event.stopPropagation();confirmarEliminarDoc('${clienteId}','${d.id}','${d.nombre}')" title="Eliminar">✕</button>
+               <div class="doc-icon">${getDocIcon(d.mime, d.tipo)}</div>
+               <div class="doc-nombre">${d.nombre}</div>
+               <div class="doc-tipo-badge">${TIPOS_DOC[d.tipo]?.label || d.tipo}</div>
+               <div class="doc-fecha">${fmtFecha(d.fecha)}</div>
+               ${d.tamaño ? `<div class="doc-size">${fmtBytes(d.tamaño)}</div>` : ''}
+             </div>`).join('')}
+           <div class="doc-upload-zone" style="min-height:100px" onclick="abrirSubirDoc('${clienteId}')"
+             ondragover="event.preventDefault();this.classList.add('dragging')"
+             ondragleave="this.classList.remove('dragging')"
+             ondrop="event.preventDefault();this.classList.remove('dragging');manejarDropDocs(event,'${clienteId}')">
+             <div style="font-size:22px">➕</div>
+             <div class="doc-upload-text">Agregar</div>
+           </div>
+         </div>`
+    }
+  </div>`;
+}
+
+async function cargarYMostrarDocs(clienteId) {
+  try {
+    const docs = await api('/documentos/' + clienteId);
+    const section = document.getElementById('docsSection_' + clienteId);
+    if (section) section.innerHTML = renderDocsSection(clienteId, docs);
+  } catch(e) { console.warn('Error cargando docs:', e); }
+}
+
+function abrirSubirDoc(clienteId) {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.pdf,.png,.jpg,.jpeg,.gif,.webp,.doc,.docx,.xls,.xlsx';
+  input.multiple = true;
+  input.onchange = (e) => procesarArchivos(Array.from(e.target.files), clienteId);
+  input.click();
+}
+
+function manejarDropDocs(event, clienteId) {
+  const files = Array.from(event.dataTransfer.files);
+  procesarArchivos(files, clienteId);
+}
+
+async function procesarArchivos(files, clienteId) {
+  if (!files.length) return;
+  const MAX = 5 * 1024 * 1024; // 5MB
+  for (const file of files) {
+    if (file.size > MAX) {
+      mostrarMsg('Archivo muy grande', `"${file.name}" supera el límite de 5 MB.`);
+      continue;
+    }
+    await subirArchivo(file, clienteId);
+  }
+  await cargarYMostrarDocs(clienteId);
+}
+
+function detectarTipoDoc(nombre, mime) {
+  const n = nombre.toLowerCase();
+  if (n.includes('pasaporte') || n.includes('passport')) return 'pasaporte';
+  if (n.includes('visa')) return 'visa';
+  if (n.includes('ine') || n.includes('credencial') || n.includes('identificacion')) return 'ine';
+  if (n.includes('acta') || n.includes('nacimiento')) return 'acta';
+  if (n.includes('curp')) return 'curp';
+  if (n.includes('comprobante') || n.includes('domicilio')) return 'comprobante';
+  if (mime?.includes('image')) return 'foto';
+  if (n.includes('formulario') || n.includes('form') || n.includes('ds-') || n.includes('i-')) return 'formulario';
+  return 'otro';
+}
+
+async function subirArchivo(file, clienteId) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const base64 = e.target.result.split(',')[1];
+      const tipo = detectarTipoDoc(file.name, file.type);
+      try {
+        await api('/documentos/' + clienteId, 'POST', {
+          nombre:    file.name,
+          tipo:      tipo,
+          mime:      file.type || 'application/octet-stream',
+          tamaño:    file.size,
+          contenido: base64,
+        });
+      } catch(err) { mostrarMsg('Error', 'No se pudo subir: ' + file.name); }
+      resolve();
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function descargarDocumento(clienteId, docId, nombre, mime) {
+  try {
+    const doc = await api('/documentos/' + clienteId + '/' + docId);
+    const byteChars = atob(doc.contenido);
+    const byteArr = new Uint8Array(byteChars.length);
+    for (let i = 0; i < byteChars.length; i++) byteArr[i] = byteChars.charCodeAt(i);
+    const blob = new Blob([byteArr], { type: doc.mime || 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    // Intentar abrir en nueva pestaña (PDF, imágenes)
+    if (doc.mime?.includes('pdf') || doc.mime?.includes('image')) {
+      window.open(url, '_blank');
+    } else {
+      const a = document.createElement('a');
+      a.href = url; a.download = doc.nombre || nombre;
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a);
+    }
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  } catch(e) { mostrarMsg('Error', e.message); }
+}
+
+function confirmarEliminarDoc(clienteId, docId, nombre) {
+  mostrarConfirm('¿Eliminar documento?', `Se eliminará "${nombre}" permanentemente.`,
+    async () => {
+      try {
+        await api('/documentos/' + clienteId + '/' + docId, 'DELETE');
+        await cargarYMostrarDocs(clienteId);
+      } catch(e) { mostrarMsg('Error', e.message); }
+    }
+  );
+}
+
 /* ═══════════════════════════════════════
    GESTIÓN DE USUARIOS
 ═══════════════════════════════════════ */
@@ -1542,6 +1837,163 @@ function confirmarEliminarUsuario(usuario, nombre) {
       } catch(e) { mostrarMsg('Error', e.message); }
     }
   );
+}
+
+
+/* ═══════════════════════════════════════
+   DOCUMENTOS
+═══════════════════════════════════════ */
+
+const DOC_ICONS = {
+  pdf:'📄', jpg:'🖼️', jpeg:'🖼️', png:'🖼️', webp:'🖼️',
+  doc:'📝', docx:'📝', xls:'📊', xlsx:'📊', default:'📁'
+};
+const DOC_CATS = {
+  identificacion:'🪪 Identificación', acta:'📄 Acta de Nacimiento',
+  curp:'📋 CURP', visa:'🇺🇸 Visa / Permiso',
+  formulario:'📝 Formulario', comprobante:'🏠 Comprobante',
+  fotografia:'📷 Fotografía', pago:'💳 Pago', otro:'📁 Otro'
+};
+
+function renderDocumentos(docs, clienteId) {
+  if (!docs || docs.length === 0) {
+    return `<div class="empty" style="padding:24px;border:1.5px dashed #DCE8F8;border-radius:12px">
+      <div class="empty-icon">📂</div>
+      <div class="empty-title">Sin documentos cargados</div>
+      <div style="font-size:12px;color:#94A3B8;margin-top:4px">Sube INE, pasaportes, actas, visas...</div>
+      <button class="btn btn-primary btn-sm" style="margin-top:10px" onclick="abrirSubirDocumento('${clienteId}')">📤 Subir primer documento</button>
+    </div>`;
+  }
+  return `<div class="doc-list">
+    ${docs.map(d => {
+      const ext = (d.extension||'').replace('.','') || 'default';
+      const icon = DOC_ICONS[ext] || DOC_ICONS.default;
+      const cat  = DOC_CATS[d.categoria] || d.categoria;
+      const tam  = d.tamano > 1048576
+        ? (d.tamano/1048576).toFixed(1)+' MB'
+        : Math.round(d.tamano/1024)+' KB';
+      return `<div class="doc-item">
+        <div class="doc-icon">${icon}</div>
+        <div class="doc-info">
+          <div class="doc-name">${d.nombre}</div>
+          <div class="doc-meta">${fmtFecha(d.fecha)} · ${tam} · ${d.subido_por||''}
+            ${d.descripcion ? ' · '+d.descripcion : ''}</div>
+        </div>
+        <span class="doc-categoria">${cat}</span>
+        <div class="doc-actions">
+          <button class="btn btn-green btn-sm" onclick="descargarDocumento('${clienteId}','${d.id}','${d.nombre.replace(/'/g,"\\'")}')">⬇️</button>
+          <button class="btn btn-danger btn-sm" onclick="eliminarDocumento('${clienteId}','${d.id}')">🗑️</button>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function abrirSubirDocumento(clienteId) {
+  docClienteId = clienteId;
+  docArchivoSeleccionado = null;
+  document.getElementById('docFileInput').value = '';
+  document.getElementById('docUploadText').textContent = 'Clic o arrastra el archivo aquí';
+  document.getElementById('btnSubirDoc').disabled = true;
+  document.getElementById('uploadProgress').classList.remove('show');
+  document.getElementById('doc_categoria').value = 'identificacion';
+  document.getElementById('doc_descripcion').value = '';
+  abrirModal('modalDocumento');
+}
+
+function previewDocFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 10*1024*1024) {
+    mostrarMsg('Archivo muy grande', 'El archivo supera el límite de 10 MB.');
+    input.value = ''; return;
+  }
+  docArchivoSeleccionado = file;
+  document.getElementById('docUploadText').textContent = '✅ ' + file.name + ' (' + Math.round(file.size/1024) + ' KB)';
+  document.getElementById('btnSubirDoc').disabled = false;
+}
+
+function handleDocDrop(e) {
+  e.preventDefault();
+  document.getElementById('docUploadArea').classList.remove('drag-over');
+  const file = e.dataTransfer?.files[0];
+  if (!file) return;
+  const dt = new DataTransfer();
+  dt.items.add(file);
+  const inp = document.getElementById('docFileInput');
+  inp.files = dt.files;
+  previewDocFile(inp);
+}
+
+async function confirmarSubirDoc() {
+  if (!docArchivoSeleccionado || !docClienteId) return;
+  const btn = document.getElementById('btnSubirDoc');
+  const prog = document.getElementById('uploadProgress');
+  const fill = document.getElementById('progressFill');
+  btn.disabled = true;
+  prog.classList.add('show');
+  fill.style.width = '30%';
+  try {
+    const form = new FormData();
+    form.append('archivo', docArchivoSeleccionado);
+    form.append('categoria', document.getElementById('doc_categoria').value);
+    form.append('descripcion', document.getElementById('doc_descripcion').value);
+    fill.style.width = '60%';
+    const resp = await fetch(SERVIDOR + '/clientes/' + docClienteId + '/documentos', {
+      method: 'POST',
+      headers: { 'X-Password': PASSWORD, 'X-Usuario': USUARIO },
+      body: form
+    });
+    fill.style.width = '90%';
+    if (!resp.ok) {
+      const err = await resp.json().catch(()=>({}));
+      throw new Error(err.detail || 'Error al subir');
+    }
+    fill.style.width = '100%';
+    setTimeout(async () => {
+      prog.classList.remove('show');
+      cerrarModal('modalDocumento');
+      // Refrescar documentos del cliente
+      await refrescarDocumentos(docClienteId);
+    }, 400);
+  } catch(e) {
+    prog.classList.remove('show');
+    btn.disabled = false;
+    mostrarMsg('Error al subir', e.message);
+  }
+}
+
+async function refrescarDocumentos(clienteId) {
+  try {
+    const docs = await api('/clientes/' + clienteId + '/documentos');
+    const section = document.getElementById('docsSection_' + clienteId);
+    const count   = document.getElementById('docsCount_' + clienteId);
+    if (section) section.innerHTML = renderDocumentos(docs, clienteId);
+    if (count)   count.textContent = '(' + docs.length + ')';
+  } catch(e) { console.error('Error refrescando docs:', e); }
+}
+
+async function descargarDocumento(clienteId, docId, nombre) {
+  try {
+    const resp = await fetch(SERVIDOR + '/clientes/' + clienteId + '/documentos/' + docId, {
+      headers: { 'X-Password': PASSWORD, 'X-Usuario': USUARIO }
+    });
+    if (!resp.ok) throw new Error('Error al descargar');
+    const blob = await resp.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = nombre; a.click();
+    URL.revokeObjectURL(url);
+  } catch(e) { mostrarMsg('Error', e.message); }
+}
+
+function eliminarDocumento(clienteId, docId) {
+  mostrarConfirm('¿Eliminar documento?', 'Esta acción no se puede deshacer.', async () => {
+    try {
+      await api('/clientes/' + clienteId + '/documentos/' + docId, 'DELETE');
+      await refrescarDocumentos(clienteId);
+    } catch(e) { mostrarMsg('Error', e.message); }
+  });
 }
 
 function badgeEstado(estado) {
