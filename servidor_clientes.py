@@ -25,34 +25,8 @@ HTML_FILE      = os.path.join(BASE_DIR, "clientes.html")
 CLIENTES_FILE  = os.path.join(BASE_DIR, "clientes.json")
 TRAMITES_FILE  = os.path.join(BASE_DIR, "trámites.json")
 
-# ── USUARIOS ─────────────────────────────────────────────
-# Formato: { "usuario": { "password": "xxx", "nombre": "Nombre", "rol": "admin|editor|viewer" } }
-# Roles:
-#   admin  → acceso total + puede ver panel de admin
-#   editor → puede crear, editar y ver clientes/trámites
-#   viewer → solo puede ver (sin crear ni editar)
-USUARIOS_FILE = os.path.join(BASE_DIR, "usuarios.json")
-
-USUARIOS_DEFAULT = {
-    "Tier": {
-        "password": "Plcdoae123",
-        "nombre": "Ángel Tier",
-        "rol": "admin"
-    }
-}
-
-def cargar_usuarios():
-    if os.path.exists(USUARIOS_FILE):
-        try:
-            with open(USUARIOS_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            pass
-    return dict(USUARIOS_DEFAULT)
-
-def guardar_usuarios(usuarios: dict):
-    with open(USUARIOS_FILE, "w", encoding="utf-8") as f:
-        json.dump(usuarios, f, ensure_ascii=False, indent=2)
+# ── AUTH ─────────────────────────────────────────────────
+APP_PASSWORD = os.environ.get("APP_PASSWORD", "Tier2024*")
 
 # ── ESTADO EN MEMORIA ────────────────────────────────────
 clientes_db: dict = {}
@@ -107,28 +81,10 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"],
 
 
 # ── AUTH DEPENDENCY ───────────────────────────────────────
-def verificar_auth(
-    x_usuario: Optional[str] = Header(None),
-    x_password: Optional[str] = Header(None)
-):
-    usuarios = cargar_usuarios()
-    # Compatibilidad: si no manda usuario busca en todos
-    if x_usuario:
-        u = usuarios.get(x_usuario)
-        if not u or u.get("password") != x_password:
-            raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
-        return {"usuario": x_usuario, "rol": u.get("rol", "editor"), "nombre": u.get("nombre", x_usuario)}
-    else:
-        # Modo legacy: buscar por contraseña
-        for nombre, data in usuarios.items():
-            if data.get("password") == x_password:
-                return {"usuario": nombre, "rol": data.get("rol", "editor"), "nombre": data.get("nombre", nombre)}
-        raise HTTPException(status_code=401, detail="Contraseña incorrecta")
-
-def verificar_admin(auth = Depends(verificar_auth)):
-    if auth.get("rol") != "admin":
-        raise HTTPException(status_code=403, detail="Se requiere rol de administrador")
-    return auth
+def verificar_auth(x_password: Optional[str] = Header(None)):
+    if x_password != APP_PASSWORD:
+        raise HTTPException(status_code=401, detail="No autorizado")
+    return True
 
 
 # ── HTML ─────────────────────────────────────────────────
@@ -162,65 +118,6 @@ def _contar_por_campo(db, campo):
         conteo[v] = conteo.get(v, 0) + 1
     return conteo
 
-
-# ══════════════════════════════════════════════════════════
-#  USUARIOS (solo admin)
-# ══════════════════════════════════════════════════════════
-
-@app.get("/usuarios")
-async def listar_usuarios(auth = Depends(verificar_admin)):
-    usuarios = cargar_usuarios()
-    # No devolver contraseñas
-    return [
-        {"usuario": k, "nombre": v.get("nombre", k), "rol": v.get("rol", "editor")}
-        for k, v in usuarios.items()
-    ]
-
-@app.post("/usuarios")
-async def crear_usuario(data: dict, auth = Depends(verificar_admin)):
-    usuarios = cargar_usuarios()
-    nombre_u = data.get("usuario", "").strip()
-    if not nombre_u:
-        raise HTTPException(400, "El nombre de usuario es requerido")
-    if nombre_u in usuarios:
-        raise HTTPException(400, f"El usuario '{nombre_u}' ya existe")
-    usuarios[nombre_u] = {
-        "password": data.get("password", ""),
-        "nombre":   data.get("nombre", nombre_u),
-        "rol":      data.get("rol", "editor")
-    }
-    guardar_usuarios(usuarios)
-    return {"ok": True, "usuario": nombre_u}
-
-@app.put("/usuarios/{nombre_usuario}")
-async def actualizar_usuario(nombre_usuario: str, data: dict, auth = Depends(verificar_admin)):
-    usuarios = cargar_usuarios()
-    if nombre_usuario not in usuarios:
-        raise HTTPException(404, "Usuario no encontrado")
-    u = usuarios[nombre_usuario]
-    if data.get("password"):
-        u["password"] = data["password"]
-    if data.get("nombre"):
-        u["nombre"] = data["nombre"]
-    if data.get("rol"):
-        u["rol"] = data["rol"]
-    guardar_usuarios(usuarios)
-    return {"ok": True}
-
-@app.delete("/usuarios/{nombre_usuario}")
-async def eliminar_usuario(nombre_usuario: str, auth = Depends(verificar_admin)):
-    usuarios = cargar_usuarios()
-    if nombre_usuario not in usuarios:
-        raise HTTPException(404, "Usuario no encontrado")
-    if nombre_usuario == auth.get("usuario"):
-        raise HTTPException(400, "No puedes eliminar tu propio usuario")
-    del usuarios[nombre_usuario]
-    guardar_usuarios(usuarios)
-    return {"ok": True}
-
-@app.get("/mi-perfil")
-async def mi_perfil(auth = Depends(verificar_auth)):
-    return auth
 
 # ══════════════════════════════════════════════════════════
 #  CLIENTES
