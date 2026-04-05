@@ -1,5 +1,5 @@
 """
-SERVIDOR GESTIÓN DE CLIENTES — TRÁMITES MIGRATORIOS
+SERVIDOR GESTIÓN DE CLIENTES — ASESORÍA RODRÍGUEZ
 FastAPI + almacenamiento JSON local
 
 Trámites: Visa Americana, Pasaporte MX, Pasaporte USA,
@@ -23,22 +23,22 @@ import uvicorn
 BASE_DIR       = os.path.dirname(os.path.abspath(__file__))
 HTML_FILE      = os.path.join(BASE_DIR, "clientes.html")
 CLIENTES_FILE  = os.path.join(BASE_DIR, "clientes.json")
-TRAMITES_FILE  = os.path.join(BASE_DIR, "tramites.json")
+TRAMITES_FILE  = os.path.join(BASE_DIR, "trámites.json")
 
 # ── AUTH ─────────────────────────────────────────────────
 APP_PASSWORD = os.environ.get("APP_PASSWORD", "Tier2024*")
 
 # ── ESTADO EN MEMORIA ────────────────────────────────────
 clientes_db: dict = {}
-tramites_db: dict = {}
+trámites_db: dict = {}
 
 
 # ── PERSISTENCIA ─────────────────────────────────────────
 def cargar_datos():
-    global clientes_db, tramites_db
+    global clientes_db, trámites_db
     for path, store, name in [
         (CLIENTES_FILE, "clientes", "clientes"),
-        (TRAMITES_FILE, "tramites", "trámites"),
+        (TRAMITES_FILE, "trámites", "trámites"),
     ]:
         if os.path.exists(path):
             try:
@@ -47,7 +47,7 @@ def cargar_datos():
                 if name == "clientes":
                     clientes_db = data
                 else:
-                    tramites_db = data
+                    trámites_db = data
                 print(f"[{name}] Cargados: {len(data)} registros")
             except Exception as e:
                 print(f"[ERROR] Cargando {name}: {e}")
@@ -58,9 +58,9 @@ def guardar_clientes():
         json.dump(clientes_db, f, ensure_ascii=False, indent=2, default=str)
 
 
-def guardar_tramites():
+def guardar_trámites():
     with open(TRAMITES_FILE, "w", encoding="utf-8") as f:
-        json.dump(tramites_db, f, ensure_ascii=False, indent=2, default=str)
+        json.dump(trámites_db, f, ensure_ascii=False, indent=2, default=str)
 
 
 def now_iso():
@@ -99,15 +99,15 @@ async def raiz():
 # ── STATUS ────────────────────────────────────────────────
 @app.get("/status")
 async def status():
-    tramites_por_estado = {}
-    for t in tramites_db.values():
+    trámites_por_estado = {}
+    for t in trámites_db.values():
         e = t.get("estado", "nuevo")
-        tramites_por_estado[e] = tramites_por_estado.get(e, 0) + 1
+        trámites_por_estado[e] = trámites_por_estado.get(e, 0) + 1
     return {
         "clientes": len(clientes_db),
-        "tramites": len(tramites_db),
-        "tramites_por_estado": tramites_por_estado,
-        "tramites_por_tipo": _contar_por_campo(tramites_db, "tipo"),
+        "trámites": len(trámites_db),
+        "trámites_por_estado": trámites_por_estado,
+        "trámites_por_tipo": _contar_por_campo(trámites_db, "tipo"),
     }
 
 
@@ -148,9 +148,9 @@ async def listar_clientes(
     # Añadir conteo de trámites a cada cliente
     for c in clientes:
         cid = c["id"]
-        t_cliente = [t for t in tramites_db.values()
+        t_cliente = [t for t in trámites_db.values()
                      if t.get("cliente_id") == cid and not t.get("eliminado")]
-        c["_num_tramites"] = len(t_cliente)
+        c["_num_trámites"] = len(t_cliente)
         c["_tramite_activo"] = next(
             (t["tipo"] for t in t_cliente
              if t.get("estado") not in ("aprobado","entregado","rechazado","cancelado")),
@@ -165,11 +165,11 @@ async def obtener_cliente(cliente_id: str, _: bool = Depends(verificar_auth)):
     if not c or c.get("eliminado"):
         raise HTTPException(404, "Cliente no encontrado")
     # Incluir trámites
-    tramites = [t for t in tramites_db.values()
+    trámites = [t for t in trámites_db.values()
                 if t.get("cliente_id") == cliente_id and not t.get("eliminado")]
-    tramites.sort(key=lambda t: t.get("fecha_inicio", ""), reverse=True)
+    trámites.sort(key=lambda t: t.get("fecha_inicio", ""), reverse=True)
     c = dict(c)
-    c["tramites"] = tramites
+    c["trámites"] = trámites
     return c
 
 
@@ -220,38 +220,38 @@ async def eliminar_cliente(cliente_id: str, _: bool = Depends(verificar_auth)):
 #  TRÁMITES
 # ══════════════════════════════════════════════════════════
 
-@app.get("/tramites")
-async def listar_tramites(
+@app.get("/trámites")
+async def listar_trámites(
     cliente_id: Optional[str] = None,
     tipo: Optional[str] = None,
     estado: Optional[str] = None,
     _: bool = Depends(verificar_auth)
 ):
-    tramites = [t for t in tramites_db.values() if not t.get("eliminado")]
+    trámites = [t for t in trámites_db.values() if not t.get("eliminado")]
     if cliente_id:
-        tramites = [t for t in tramites if t.get("cliente_id") == cliente_id]
+        trámites = [t for t in trámites if t.get("cliente_id") == cliente_id]
     if tipo:
-        tramites = [t for t in tramites if t.get("tipo") == tipo]
+        trámites = [t for t in trámites if t.get("tipo") == tipo]
     if estado:
-        tramites = [t for t in tramites if t.get("estado") == estado]
-    tramites.sort(key=lambda t: t.get("fecha_inicio", ""), reverse=True)
+        trámites = [t for t in trámites if t.get("estado") == estado]
+    trámites.sort(key=lambda t: t.get("fecha_inicio", ""), reverse=True)
     # Enriquecer con nombre de cliente
-    for t in tramites:
+    for t in trámites:
         c = clientes_db.get(t.get("cliente_id", ""), {})
         t["_cliente_nombre"] = (
             f"{c.get('nombre','')} {c.get('ap_paterno','')} {c.get('ap_materno','')}".strip()
         )
         t["_cliente_folio"] = c.get("id_secuencial", "")
-    return tramites
+    return trámites
 
 
-@app.post("/tramites")
+@app.post("/trámites")
 async def crear_tramite(data: dict, _: bool = Depends(verificar_auth)):
     tid = str(uuid.uuid4())
     # ID secuencial de trámites
-    ids_existentes = [t.get("id_secuencial", 0) for t in tramites_db.values()]
+    ids_existentes = [t.get("id_secuencial", 0) for t in trámites_db.values()]
     sig_id = (max(ids_existentes) + 1) if ids_existentes else 1
-    tramite = {
+    trámite = {
         "id": tid,
         "id_secuencial": sig_id,
         "fecha_inicio": now_iso(),
@@ -267,16 +267,16 @@ async def crear_tramite(data: dict, _: bool = Depends(verificar_auth)):
         **data
     }
     tramite.pop("_usuario", None)
-    tramites_db[tid] = tramite
-    guardar_tramites()
+    trámites_db[tid] = tramite
+    guardar_trámites()
     return tramite
 
 
-@app.put("/tramites/{tramite_id}")
+@app.put("/trámites/{tramite_id}")
 async def actualizar_tramite(tramite_id: str, data: dict, _: bool = Depends(verificar_auth)):
-    if tramite_id not in tramites_db:
+    if tramite_id not in trámites_db:
         raise HTTPException(404, "Trámite no encontrado")
-    tramite = tramites_db[tramite_id]
+    trámite = trámites_db[tramite_id]
 
     # Registrar cambio de estado en historial
     nuevo_estado = data.get("estado")
@@ -306,16 +306,16 @@ async def actualizar_tramite(tramite_id: str, data: dict, _: bool = Depends(veri
 
     tramite.update(data)
     tramite["fecha_actualizacion"] = now_iso()
-    guardar_tramites()
+    guardar_trámites()
     return tramite
 
 
-@app.delete("/tramites/{tramite_id}")
+@app.delete("/trámites/{tramite_id}")
 async def eliminar_tramite(tramite_id: str, _: bool = Depends(verificar_auth)):
-    if tramite_id not in tramites_db:
+    if tramite_id not in trámites_db:
         raise HTTPException(404, "Trámite no encontrado")
-    tramites_db[tramite_id]["eliminado"] = True
-    guardar_tramites()
+    trámites_db[tramite_id]["eliminado"] = True
+    guardar_trámites()
     return {"ok": True}
 
 
